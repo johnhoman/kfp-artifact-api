@@ -1,3 +1,4 @@
 *
-!main.py
+src/*_test.py
+!src
 !requirements.txt

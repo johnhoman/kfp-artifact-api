@@ -87,7 +87,7 @@ def get_model(
 
     contexts = store.get_contexts(list_options=ListOptions(
         limit=1,
-        filter_query=f"name = {run_id}"
+        filter_query=f"name = '{run_id}'"
     ))
     if len(contexts) < 1:
         return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={"message": "Context for run_id not found"})
