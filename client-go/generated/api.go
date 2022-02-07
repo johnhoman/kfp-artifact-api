@@ -15,8 +15,8 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 )
 
-// ErrorMessage defines model for ErrorMessage.
-type ErrorMessage struct {
+// Error defines model for Error.
+type Error struct {
 	Message string `json:"message"`
 }
 
@@ -25,9 +25,22 @@ type HTTPValidationError struct {
 	Detail *[]ValidationError `json:"detail,omitempty"`
 }
 
+// An enumeration.
+type HealthStatus interface{}
+
+// V1Alpha1HealthCheck defines model for V1Alpha1HealthCheck.
+type V1Alpha1HealthCheck struct {
+	ConnectOk         *bool `json:"connect_ok,omitempty"`
+	MetadataConnectOk *bool `json:"metadata_connect_ok,omitempty"`
+	Status            *struct {
+		// Embedded struct due to allOf(#/components/schemas/HealthStatus)
+		HealthStatus `yaml:",inline"`
+	} `json:"status,omitempty"`
+}
+
 // V1Alpha1Model defines model for V1Alpha1Model.
 type V1Alpha1Model struct {
-	ModelUri string `json:"model_uri"`
+	Uri string `json:"uri"`
 }
 
 // ValidationError defines model for ValidationError.
@@ -110,12 +123,15 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetModelUriApiV1alpha1ModelRunIdGet request
-	GetModelUriApiV1alpha1ModelRunIdGet(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// HealthzApiHealthzGet request
+	HealthzApiHealthzGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetModelApiV1alpha1ModelRunIdGet request
+	GetModelApiV1alpha1ModelRunIdGet(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetModelUriApiV1alpha1ModelRunIdGet(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetModelUriApiV1alpha1ModelRunIdGetRequest(c.Server, runId)
+func (c *Client) HealthzApiHealthzGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHealthzApiHealthzGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +142,47 @@ func (c *Client) GetModelUriApiV1alpha1ModelRunIdGet(ctx context.Context, runId 
 	return c.Client.Do(req)
 }
 
-// NewGetModelUriApiV1alpha1ModelRunIdGetRequest generates requests for GetModelUriApiV1alpha1ModelRunIdGet
-func NewGetModelUriApiV1alpha1ModelRunIdGetRequest(server string, runId string) (*http.Request, error) {
+func (c *Client) GetModelApiV1alpha1ModelRunIdGet(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetModelApiV1alpha1ModelRunIdGetRequest(c.Server, runId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewHealthzApiHealthzGetRequest generates requests for HealthzApiHealthzGet
+func NewHealthzApiHealthzGetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/healthz")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetModelApiV1alpha1ModelRunIdGetRequest generates requests for GetModelApiV1alpha1ModelRunIdGet
+func NewGetModelApiV1alpha1ModelRunIdGetRequest(server string, runId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -203,20 +258,21 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetModelUriApiV1alpha1ModelRunIdGet request
-	GetModelUriApiV1alpha1ModelRunIdGetWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetModelUriApiV1alpha1ModelRunIdGetResponse, error)
+	// HealthzApiHealthzGet request
+	HealthzApiHealthzGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthzApiHealthzGetResponse, error)
+
+	// GetModelApiV1alpha1ModelRunIdGet request
+	GetModelApiV1alpha1ModelRunIdGetWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetModelApiV1alpha1ModelRunIdGetResponse, error)
 }
 
-type GetModelUriApiV1alpha1ModelRunIdGetResponse struct {
+type HealthzApiHealthzGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *V1Alpha1Model
-	JSON404      *ErrorMessage
-	JSON422      *HTTPValidationError
+	JSON200      *V1Alpha1HealthCheck
 }
 
 // Status returns HTTPResponse.Status
-func (r GetModelUriApiV1alpha1ModelRunIdGetResponse) Status() string {
+func (r HealthzApiHealthzGetResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -224,31 +280,90 @@ func (r GetModelUriApiV1alpha1ModelRunIdGetResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetModelUriApiV1alpha1ModelRunIdGetResponse) StatusCode() int {
+func (r HealthzApiHealthzGetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// GetModelUriApiV1alpha1ModelRunIdGetWithResponse request returning *GetModelUriApiV1alpha1ModelRunIdGetResponse
-func (c *ClientWithResponses) GetModelUriApiV1alpha1ModelRunIdGetWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetModelUriApiV1alpha1ModelRunIdGetResponse, error) {
-	rsp, err := c.GetModelUriApiV1alpha1ModelRunIdGet(ctx, runId, reqEditors...)
+type GetModelApiV1alpha1ModelRunIdGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V1Alpha1Model
+	JSON404      *Error
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetModelApiV1alpha1ModelRunIdGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetModelApiV1alpha1ModelRunIdGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// HealthzApiHealthzGetWithResponse request returning *HealthzApiHealthzGetResponse
+func (c *ClientWithResponses) HealthzApiHealthzGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthzApiHealthzGetResponse, error) {
+	rsp, err := c.HealthzApiHealthzGet(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetModelUriApiV1alpha1ModelRunIdGetResponse(rsp)
+	return ParseHealthzApiHealthzGetResponse(rsp)
 }
 
-// ParseGetModelUriApiV1alpha1ModelRunIdGetResponse parses an HTTP response from a GetModelUriApiV1alpha1ModelRunIdGetWithResponse call
-func ParseGetModelUriApiV1alpha1ModelRunIdGetResponse(rsp *http.Response) (*GetModelUriApiV1alpha1ModelRunIdGetResponse, error) {
+// GetModelApiV1alpha1ModelRunIdGetWithResponse request returning *GetModelApiV1alpha1ModelRunIdGetResponse
+func (c *ClientWithResponses) GetModelApiV1alpha1ModelRunIdGetWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetModelApiV1alpha1ModelRunIdGetResponse, error) {
+	rsp, err := c.GetModelApiV1alpha1ModelRunIdGet(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetModelApiV1alpha1ModelRunIdGetResponse(rsp)
+}
+
+// ParseHealthzApiHealthzGetResponse parses an HTTP response from a HealthzApiHealthzGetWithResponse call
+func ParseHealthzApiHealthzGetResponse(rsp *http.Response) (*HealthzApiHealthzGetResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetModelUriApiV1alpha1ModelRunIdGetResponse{
+	response := &HealthzApiHealthzGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V1Alpha1HealthCheck
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetModelApiV1alpha1ModelRunIdGetResponse parses an HTTP response from a GetModelApiV1alpha1ModelRunIdGetWithResponse call
+func ParseGetModelApiV1alpha1ModelRunIdGetResponse(rsp *http.Response) (*GetModelApiV1alpha1ModelRunIdGetResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetModelApiV1alpha1ModelRunIdGetResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -262,7 +377,7 @@ func ParseGetModelUriApiV1alpha1ModelRunIdGetResponse(rsp *http.Response) (*GetM
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest ErrorMessage
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

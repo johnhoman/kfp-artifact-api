@@ -24,7 +24,7 @@ generate: oapi-codegen
 	mkdir /tmp/kfp-artifact-api
 	rm -rf $(shell pwd)/client-go/generated
 	mkdir $(shell pwd)/client-go/generated
-	python -c "import main, json; print(json.dumps(main.app.openapi(), indent=4))" > /tmp/kfp-artifact-api/openapi-spec.json
+	python -c "import src.main, json; print(json.dumps(src.main.app.openapi(), indent=4))" > /tmp/kfp-artifact-api/openapi-spec.json
 	$(OAPI_CODEGEN) -generate client,types \
         -o $(shell pwd)/client-go/generated/api.go \
         -package generated \
